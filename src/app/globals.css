@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── react-flow dark overrides ── */
+.react-flow {
+  --xy-background-color: transparent;
+}
+.react-flow__node {
+  font-family: inherit;
+}
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__handle {
+  display: none;
+}
+
+/* ── scrollbars discretos ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── partícula de paquete: glow sutil ── */
+@keyframes packet-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
