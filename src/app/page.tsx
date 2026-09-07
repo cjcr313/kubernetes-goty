@@ -8,6 +8,7 @@
  *   └ right: stack switcher + métricas en vivo ────────┘
  */
 import { Play, Pause, Gauge, Trophy } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { EngineTicker } from '@/components/EngineTicker';
 import { TopologyCanvas } from '@/components/topology/TopologyCanvas';
 import { TraceInspector } from '@/components/topology/TraceInspector';
@@ -32,9 +33,25 @@ export default function Home() {
   const log = usePlayground((s) => s.log);
   const scenario = getScenario(scenarioId);
 
+  // gate de montaje: el estado del clúster es random en cada carga, así que el
+  // HTML prerenderizado nunca calza con el cliente → hidratar solo el skeleton
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // slider logarítmico 10 → 100.000 RPS
   const sliderValue = Math.log10(rps);
   const onSlider = (v: number) => setRps(Math.round(Math.pow(10, v)));
+
+  if (!mounted) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-ink-950">
+        <div className="flex items-center gap-3 text-slate-500">
+          <Trophy className="h-6 w-6 animate-pulse text-amber-400" />
+          <span className="font-mono text-sm">cargando kubernetes.goty…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">

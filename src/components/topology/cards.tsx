@@ -4,10 +4,21 @@
  * Custom node cards para React Flow (v12).
  */
 import { memo } from 'react';
-import type { Node, NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { Server, Box, Globe, Waypoints, Cpu, TriangleAlert, Cloud } from 'lucide-react';
 import type { EdgeStack, KubeNode, KubeService, Pod } from '@/domain/types';
 import { POD_STATUS_COLORS, cn } from '@/lib/utils';
+
+/** Handles invisibles pero medibles: React Flow ancla las aristas aquí. */
+const hiddenHandle = '!h-1.5 !w-1.5 !border-0 !bg-transparent !opacity-0 !pointer-events-none';
+function HocHandles({ target = true, source = true }: { target?: boolean; source?: boolean }) {
+  return (
+    <>
+      {target && <Handle type="target" position={Position.Left} className={hiddenHandle} isConnectable={false} />}
+      {source && <Handle type="source" position={Position.Right} className={hiddenHandle} isConnectable={false} />}
+    </>
+  );
+}
 
 // ── tipos RF ──
 export type ClientRFNode = Node<{ label?: string }, 'client'>;
@@ -31,6 +42,7 @@ export function ClientCard({ data }: NodeProps<ClientRFNode>) {
         <div className="text-xs font-semibold text-slate-200">{data.label ?? 'Cliente'}</div>
       </div>
       <div className="mt-1 font-mono text-[10px] text-slate-500">internet / navegador</div>
+      <HocHandles source />
     </div>
   );
 }
@@ -43,6 +55,7 @@ export function EdgeGwCard({ data }: NodeProps<EdgeGwRFNode>) {
         <div className="text-xs font-semibold text-indigo-100">Edge</div>
       </div>
       <div className="mt-1 font-mono text-[10px] text-indigo-300/80">{EDGE_LABELS[data.stack]}</div>
+      <HocHandles />
     </div>
   );
 }
@@ -78,6 +91,7 @@ export function ServiceCard({ data }: NodeProps<ServiceRFNode>) {
           {svc.endpoints.length} ep
         </span>
       </div>
+      <HocHandles />
     </div>
   );
 }
@@ -125,6 +139,7 @@ export function PodCard({ data }: NodeProps<PodRFNode>) {
           {pod.restarts > 0 ? ` · ↻${pod.restarts}` : ''}
         </span>
       </div>
+      <HocHandles />
     </div>
   );
 }
@@ -162,6 +177,7 @@ export function InternetCard() {
         <div className="text-xs font-semibold text-cyan-100">Internet / upstream</div>
       </div>
       <div className="mt-1 font-mono text-[10px] text-cyan-300/70">egress → SNAT → internet</div>
+      <HocHandles />
     </div>
   );
 }
