@@ -92,11 +92,17 @@ export const usePlayground = create<PlaygroundState>()((set, get) => ({
       ...hpaEvents.map((text) => ({ tick: cluster.tick, text, kind: 'scale' as const })),
     ];
 
-    // selección: mantener si sigue vivo el id, sino el primer trace del tick
+    // selección: mantener si sigue vivo el id; si no, auto-elegir el trace
+    // MÁS VISUAL (ruta completa svc→pod) para que el packet-walk siempre se vea
+    const bestTrace =
+      traces.find((t) => t.chosenPod && t.targetServiceId) ??
+      traces.find((t) => t.dnsQueries?.length) ??
+      traces[0] ??
+      null;
     const selectedTraceId =
       state.selectedTraceId && traces.some((t) => t.id === state.selectedTraceId)
         ? state.selectedTraceId
-        : traces[0]?.id ?? null;
+        : bestTrace?.id ?? null;
 
     set({
       cluster: { ...cluster },

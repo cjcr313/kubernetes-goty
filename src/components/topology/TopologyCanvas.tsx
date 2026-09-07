@@ -51,6 +51,15 @@ export function buildGraph(
     data: { label: 'Cliente' },
   });
 
+  // ── internet / upstream (destino del egress) ──
+  nodes.push({
+    id: 'internet',
+    type: 'cloud',
+    position: { x: 0, y: 40 },
+    data: {},
+    draggable: false,
+  });
+
   // ── edge gateway ──
   if (stack.edge !== 'none') {
     nodes.push({
@@ -107,6 +116,8 @@ export function buildGraph(
   });
 
   // ── overlay del paquete (traza activa) ──
+  // NOTA: los ids de packet-edges son estables (pkt-live-*) para que React Flow
+  // NO los remonte cada tick: la animación animateMotion fluye continua.
   if (trace) {
     const chain: string[] = [];
     const srcPod = resolveSourcePod(cluster, trace.request);
@@ -116,16 +127,20 @@ export function buildGraph(
       if (stack.edge !== 'none') chain.push('edge-gw');
     } else if (srcPod) {
       chain.push(`pod-${srcPod.id}`);
-      // salto DNS hacia CoreDNS
+      // salto DNS hacia CoreDNS (ruta ámbar punteada)
       if (trace.dnsQueries?.length) {
         const coredns = cluster.pods.find(
           (p) => p.owner?.name === 'coredns' && p.status === 'Running'
         );
         if (coredns) {
           edges.push(
-            packetEdge(`pod-${srcPod.id}`, `pod-${coredns.id}`, `pkt-dns-${trace.id}`, '#fbbf24', true)
+            packetEdge(`pod-${srcPod.id}`, `pod-${coredns.id}`, 'pkt-live-dns', '#fbbf24', true)
           );
         }
+      }
+      // destino externo: el viaje termina en internet (egress SNAT)
+      if (trace.request.destination.kind === 'external-url') {
+        chain.push('internet');
       }
     }
 
@@ -135,8 +150,13 @@ export function buildGraph(
 
     const color = OUTCOME_COLORS[trace.outcome] ?? '#22d3ee';
     for (let i = 0; i < chain.length - 1; i++) {
-      edges.push(packetEdge(chain[i], chain[i + 1], `pkt-${trace.id}-${i}`, color, false));
+      edges.push(packetEdge(chain[i], chain[i + 1], `pkt-live-${i}`, color, false));
     }
+  }
+
+  // entrada de tráfico externo por el edge
+  if (stack.edge !== 'none') {
+    edges.push(baseEdge('internet', 'edge-gw', 'e-internet-edge'));
   }
 
   return { nodes, edges };
@@ -159,7 +179,7 @@ function packetEdge(source: string, target: string, id: string, color: string, d
     source,
     target,
     type: 'packet',
-    data: { color, dashed, dur: '1.2s' },
+    data: { color, dashed, durMs: 1100 },
     zIndex: 10,
   };
 }
@@ -184,7 +204,7 @@ export function TopologyCanvas() {
   );
 
   return (
-    <div className="h-full w-full">
+    <div className="relative h-full w-full">
       <ReactFlow
         nodes={graph.nodes}
         edges={graph.edges}
@@ -217,6 +237,18 @@ export function TopologyCanvas() {
           }}
         />
       </ReactFlow>
+      {/* leyenda del packet-walk */}
+      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-lg border border-slate-800 bg-slate-950/85 px-3 py-2 text-[10px] leading-relaxed text-slate-400 shadow-lg backdrop-blur">
+        <div className="mb-1 flex items-center gap-1.5 font-semibold text-slate-300">
+          <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-cyan-400" />
+          paquete viajando en vivo
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-cyan-400" /> entregado
+          <span className="inline-block h-2 w-2 rounded-full bg-red-500" /> drop
+          <span className="inline-block h-2 w-2 rounded-full bg-amber-400" /> DNS
+        </div>
+      </div>
     </div>
   );
 }

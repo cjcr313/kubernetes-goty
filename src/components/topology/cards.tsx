@@ -5,7 +5,7 @@
  */
 import { memo } from 'react';
 import type { Node, NodeProps } from '@xyflow/react';
-import { Server, Box, Globe, Waypoints, Cpu, TriangleAlert } from 'lucide-react';
+import { Server, Box, Globe, Waypoints, Cpu, TriangleAlert, Cloud } from 'lucide-react';
 import type { EdgeStack, KubeNode, KubeService, Pod } from '@/domain/types';
 import { POD_STATUS_COLORS, cn } from '@/lib/utils';
 
@@ -154,10 +154,23 @@ export function KubeNodeCard({ data }: NodeProps<KubeNodeRFNode>) {
   );
 }
 
+export function InternetCard() {
+  return (
+    <div className="w-[190px] rounded-lg border border-dashed border-cyan-800/70 bg-cyan-950/40 px-3 py-2.5 shadow-lg backdrop-blur">
+      <div className="flex items-center gap-2">
+        <Cloud className="h-4 w-4 text-cyan-300" />
+        <div className="text-xs font-semibold text-cyan-100">Internet / upstream</div>
+      </div>
+      <div className="mt-1 font-mono text-[10px] text-cyan-300/70">egress → SNAT → internet</div>
+    </div>
+  );
+}
+
 export const nodeTypes = {
   client: memo(ClientCard),
   edgeGw: memo(EdgeGwCard),
   svc: memo(ServiceCard),
   pod: memo(PodCard),
   kube: memo(KubeNodeCard),
+  cloud: memo(InternetCard),
 };

@@ -1,13 +1,16 @@
 'use client';
 
 /**
- * Arista de paquete: path base + partícula animada (SVG animateMotion)
- * recorriendo la curva de bezier del edge.
+ * Arista de paquete: ruta base resaltada + múltiples partículas animadas
+ * (SVG animateMotion) con glow, recorriendo la curva de bezier del edge.
  */
 import { memo } from 'react';
 import { BaseEdge, getBezierPath, type Edge, type EdgeProps } from '@xyflow/react';
 
-export type PacketRFEdge = Edge<{ color?: string; dashed?: boolean; dur?: string }, 'packet'>;
+export type PacketRFEdge = Edge<
+  { color?: string; dashed?: boolean; durMs?: number },
+  'packet'
+>;
 
 function PacketEdgeImpl(props: EdgeProps<PacketRFEdge>) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props;
@@ -20,20 +23,38 @@ function PacketEdgeImpl(props: EdgeProps<PacketRFEdge>) {
     targetPosition,
   });
   const color = data?.color ?? '#22d3ee';
+  const durMs = data?.durMs ?? 1100;
+
   return (
     <>
+      {/* halo ancho y tenue bajo la ruta */}
+      <path d={edgePath} fill="none" stroke={color} strokeWidth={9} opacity={0.12} strokeLinecap="round" />
       <BaseEdge
         id={id}
         path={edgePath}
         style={{
           stroke: color,
-          strokeWidth: 2,
-          strokeDasharray: data?.dashed ? '6 4' : undefined,
+          strokeWidth: 2.5,
+          strokeDasharray: data?.dashed ? '7 5' : undefined,
         }}
       />
-      <circle r={5} fill={color}>
-        <animateMotion dur={data?.dur ?? '1.4s'} repeatCount="indefinite" path={edgePath} />
-      </circle>
+      {/* tres partículas desfasadas: sensación de flujo continuo */}
+      {[0, 1, 2].map((i) => (
+        <circle
+          key={i}
+          r={i === 0 ? 7 : 4.5}
+          fill={color}
+          opacity={i === 0 ? 1 : 0.55}
+          style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+        >
+          <animateMotion
+            dur={`${durMs}ms`}
+            begin={`-${Math.round((durMs / 3) * i)}ms`}
+            repeatCount="indefinite"
+            path={edgePath}
+          />
+        </circle>
+      ))}
     </>
   );
 }
